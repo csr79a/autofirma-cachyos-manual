@@ -17,6 +17,11 @@
 
 set -euo pipefail
 
+CLEAN_AFTER=false
+if [[ "${1:-}" == "--clean" ]]; then
+    CLEAN_AFTER=true
+fi
+
 BUILD_DIR="$HOME/build/autofirma"
 JAVA_WEBSOCKET_COMMIT="8c5766a293c2dd3e0d035c0e0d70f88f57235fa8"
 CLIENTEAFIRMA_TAG="v1.9.2"
@@ -116,6 +121,24 @@ log "7. Registrando el protocolo afirma://"
 # ---------------------------------------------------------------------------
 xdg-mime default autofirma.desktop x-scheme-handler/afirma
 echo "Protocolo registrado: $(xdg-mime query default x-scheme-handler/afirma)"
+
+# ---------------------------------------------------------------------------
+log "8. Limpieza de carpetas de compilación"
+# ---------------------------------------------------------------------------
+if [ "$CLEAN_AFTER" = true ]; then
+    echo "Flag --clean detectado: eliminando carpetas de compilación."
+    echo "El .jar ya quedó instalado en /usr/share/java/autofirma/autofirma.jar,"
+    echo "así que esto no afecta al funcionamiento de AutoFirma."
+    rm -rf "$BUILD_DIR"
+    rm -rf "$HOME/.m2/repository/org/java-websocket"
+    echo "Carpetas de compilación eliminadas ($BUILD_DIR y caché de Maven de Java-WebSocket)."
+    echo "Nota: jdk17-openjdk y maven (instalados vía pacman) NO se han desinstalado;"
+    echo "hazlo a mano con 'sudo pacman -Rns jdk17-openjdk maven' si no los necesitas para nada más."
+else
+    echo "Sin flag --clean: se conservan $BUILD_DIR y el caché de Maven"
+    echo "para agilizar una futura actualización (git fetch + recompilar)."
+    echo "Ejecuta el script con --clean si quieres eliminarlos al finalizar."
+fi
 
 # ---------------------------------------------------------------------------
 log "Instalación completada"
