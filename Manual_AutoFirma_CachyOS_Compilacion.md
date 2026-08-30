@@ -177,6 +177,10 @@ En el primer arranque, el script genera automáticamente un CA local en `~/.afir
 
 Para que AutoFirma pueda firmar de verdad, el certificado personal debe estar en el almacén NSS compartido del sistema (`~/.pki/nssdb`).
 
+> Si usaste `instalar_autofirma.sh`, el almacén ya está creado (vacío,
+> sin contraseña) y puedes saltar directamente al paso de importación
+> del certificado.
+
 Crear el almacén con **contraseña en blanco** (crítico: una contraseña no vacía provoca fallos silenciosos cuando el navegador invoca la firma):
 
 ```bash

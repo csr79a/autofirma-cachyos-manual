@@ -130,7 +130,22 @@ xdg-mime default autofirma.desktop x-scheme-handler/afirma
 echo "Protocolo registrado: $(xdg-mime query default x-scheme-handler/afirma)"
 
 # ---------------------------------------------------------------------------
-log "8. Limpieza de carpetas de compilación"
+log "8. Creando el almacén NSS (vacío, sin contraseña)"
+# ---------------------------------------------------------------------------
+# Solo se crea el almacén, sin importar ningún certificado: eso es un dato
+# personal tuyo y lo haces tú a mano en el paso siguiente. El flag
+# --empty-password es crítico: una contraseña no vacía aquí provoca fallos
+# silenciosos cuando el navegador invoca la firma.
+mkdir -p "$HOME/.pki/nssdb"
+if certutil -L -d "sql:$HOME/.pki/nssdb" > /dev/null 2>&1; then
+    echo "El almacén NSS ya existe en $HOME/.pki/nssdb, no se vuelve a crear."
+else
+    certutil -N -d "sql:$HOME/.pki/nssdb" --empty-password
+    echo "Almacén NSS creado (vacío, sin contraseña) en $HOME/.pki/nssdb"
+fi
+
+# ---------------------------------------------------------------------------
+log "9. Limpieza de carpetas de compilación"
 # ---------------------------------------------------------------------------
 if [ "$CLEAN_AFTER" = true ]; then
     echo "Flag --clean detectado: eliminando carpetas de compilación."
@@ -155,21 +170,20 @@ cat <<'EOF'
 Pasos que quedan por hacer A MANO (no automatizados por este script,
 por implicar interacción o datos personales):
 
-  8. Primer arranque:
+  - Primer arranque:
        autofirma
      (genera el CA local en ~/.afirma/Autofirma/)
 
-  9. Importar tu certificado personal (FNMT u otro) en el almacén NSS:
-       mkdir -p ~/.pki/nssdb
-       certutil -N -d sql:$HOME/.pki/nssdb --empty-password
+  - Importar tu certificado personal (FNMT u otro) en el almacén NSS
+    (el almacén ya está creado, vacío y sin contraseña, por este script):
        pk12util -d sql:$HOME/.pki/nssdb -i /ruta/a/tu/certificado.pfx
        certutil -L -d sql:$HOME/.pki/nssdb
 
-  10. En AutoFirma → Preferencias → Almacenes de claves:
+  - En AutoFirma → Preferencias → Almacenes de claves:
         - Almacén por defecto: NSS
         - Marcar "Usar también en las llamadas a Autofirma desde el navegador"
 
-  11. Probar la integración completa en:
+  - Probar la integración completa en:
         https://expinterweb.mites.gob.es/scriptAutofirmaTest/
 
 Consulta el manual completo (Manual_AutoFirma_CachyOS_Compilacion.md)
