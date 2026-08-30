@@ -35,7 +35,14 @@ log() {
 # ---------------------------------------------------------------------------
 log "1. Instalando JDK 17 y Maven"
 # ---------------------------------------------------------------------------
-sudo pacman -S --needed --noconfirm jdk17-openjdk maven git
+# --needed hace que pacman omita automáticamente cualquier paquete que ya
+# esté instalado (por ejemplo, git suele venir ya en CachyOS), sin
+# reinstalarlo ni volver a descargarlo.
+#   jdk17-openjdk, maven, git -> compilación
+#   curl, patch                -> descargar y aplicar el parche del PR #487
+#   xdg-utils                  -> xdg-mime, para registrar el protocolo afirma://
+#   nss                        -> certutil/pk12util, usados en el paso 9 (manual)
+sudo pacman -S --needed --noconfirm jdk17-openjdk maven git curl patch xdg-utils nss
 
 if ! archlinux-java status | grep -q "java-17-openjdk (default)"; then
     log "Fijando JDK 17 como entorno activo"
