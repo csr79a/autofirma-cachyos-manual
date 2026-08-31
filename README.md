@@ -17,9 +17,11 @@ paquete de AUR ni de Flatpak.
 - [`Manual_AutoFirma_CachyOS_Compilacion.md`](./Manual_AutoFirma_CachyOS_Compilacion.md) —
   guía paso a paso para compilar e instalar AutoFirma en CachyOS/Arch Linux.
 - [`instalar_autofirma.sh`](./instalar_autofirma.sh) — script que automatiza
-  los pasos 1-7 del manual (compilación e instalación). Los pasos 8-11
-  (arranque, importar certificado, preferencias, test) se hacen a mano
-  por implicar interacción o datos personales.
+  los pasos 1-8 del manual (dependencias, compilación, instalación, registro
+  del protocolo y creación del almacén NSS vacío). Solo quedan a mano el
+  primer arranque, la importación del certificado personal, la configuración
+  de preferencias y el test final, por implicar interacción o datos
+  personales.
 
 ## Uso rápido
 
@@ -27,38 +29,38 @@ paquete de AUR ni de Flatpak.
 git clone https://github.com/csr79a/autofirma-cachyos-manual.git
 cd autofirma-cachyos-manual
 chmod +x instalar_autofirma.sh
-```
-
-### Modo normal
-
-Para un entorno de build que se va a mantener (por ejemplo, una VM
-dedicada a compilar y actualizar AutoFirma), conserva las carpetas de
-compilación (`~/build/autofirma/` y el caché de Maven) para que una
-futura actualización sea rápida (`git fetch` + recompilar, sin volver
-a clonar todo desde cero):
-
-```bash
 ./instalar_autofirma.sh
 ```
 
-### Modo limpio (`--clean`)
+Al arrancar, el script pregunta:
 
-Para una instalación en un equipo de uso personal, donde no interesa
-dejar carpetas de compilación ni código fuente clonado una vez
-instalado AutoFirma:
-
-```bash
-./instalar_autofirma.sh --clean
+```
+¿Eliminar las carpetas de compilación al finalizar? [y/N]
 ```
 
-Esto elimina `~/build/autofirma/` y el caché de Maven de
-Java-WebSocket al terminar. No desinstala `jdk17-openjdk` ni `maven`
-del sistema (instalados vía pacman); eso se hace a mano si no se
-necesitan para nada más:
+- **N** (o Enter) — para un entorno de referencia que se va a mantener
+  (por ejemplo, una VM dedicada a compilar y actualizar AutoFirma):
+  conserva `~/build/autofirma/` y el caché de Maven, para que una
+  futura actualización sea rápida (`git fetch` + recompilar, sin
+  volver a clonar todo desde cero).
+- **Y** — para una instalación en un equipo de uso personal, donde no
+  interesa dejar carpetas de compilación ni código fuente clonado una
+  vez instalado AutoFirma. Elimina `~/build/autofirma/` (y la carpeta
+  padre si queda vacía) y el caché de Maven de Java-WebSocket.
+
+En ningún caso se desinstalan `jdk17-openjdk` ni `maven`: AutoFirma
+necesita el JDK 17 también en tiempo de ejecución, no solo para
+compilar, así que quitarlo rompería la aplicación ya instalada.
+
+Tras ejecutar el script, sigue el manual desde el paso 8 (primer
+arranque) para completar la instalación.
+
+## Comprobar si hay una versión nueva de AutoFirma
 
 ```bash
-sudo pacman -Rns jdk17-openjdk maven
+git ls-remote --tags https://github.com/ctt-gob-es/clienteafirma.git | grep -v '\^{}' | tail -5
 ```
 
-Tras ejecutar el script (en cualquiera de los dos modos), sigue el
-manual desde el paso 8 para completar la instalación.
+O activa notificaciones en GitHub: entra a
+[`ctt-gob-es/clienteafirma`](https://github.com/ctt-gob-es/clienteafirma) →
+botón **Watch** → **Custom** → marca **Releases**.
