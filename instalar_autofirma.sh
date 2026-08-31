@@ -12,13 +12,21 @@
 #   chmod +x instalar_autofirma.sh
 #   ./instalar_autofirma.sh
 #
+# Al iniciar, el propio script pregunta si quieres eliminar las carpetas
+# de compilación al finalizar (útil en un equipo de uso personal) o
+# conservarlas (útil en un entorno de referencia para futuras actualizaciones).
 # El script se detiene ante cualquier error (set -e) para no dejar
 # el sistema en un estado a medias.
 
 set -euo pipefail
 
+echo "Este equipo, ¿es un entorno de referencia donde harás futuras"
+echo "actualizaciones (conservar código fuente y caché de compilación),"
+echo "o es un equipo de uso personal donde solo quieres AutoFirma"
+echo "instalado, sin dejar carpetas de compilación?"
+read -rp "¿Eliminar las carpetas de compilación al finalizar? [y/N] " resp_clean
 CLEAN_AFTER=false
-if [[ "${1:-}" == "--clean" ]]; then
+if [[ "$resp_clean" =~ ^[Yy]$ ]]; then
     CLEAN_AFTER=true
 fi
 
@@ -148,18 +156,24 @@ fi
 log "9. Limpieza de carpetas de compilación"
 # ---------------------------------------------------------------------------
 if [ "$CLEAN_AFTER" = true ]; then
-    echo "Flag --clean detectado: eliminando carpetas de compilación."
+    echo "Eliminando carpetas de compilación (elegiste 'sí' al inicio)."
     echo "El .jar ya quedó instalado en /usr/share/java/autofirma/autofirma.jar,"
     echo "así que esto no afecta al funcionamiento de AutoFirma."
     rm -rf "$BUILD_DIR"
+    # Si la carpeta padre (p.ej. ~/build) quedó vacía tras borrar autofirma/,
+    # se elimina también para no dejar restos sueltos.
+    BUILD_PARENT="$(dirname "$BUILD_DIR")"
+    if [ -d "$BUILD_PARENT" ] && [ -z "$(ls -A "$BUILD_PARENT" 2>/dev/null)" ]; then
+        rmdir "$BUILD_PARENT"
+    fi
     rm -rf "$HOME/.m2/repository/org/java-websocket"
     echo "Carpetas de compilación eliminadas ($BUILD_DIR y caché de Maven de Java-WebSocket)."
-    echo "Nota: jdk17-openjdk y maven (instalados vía pacman) NO se han desinstalado;"
-    echo "hazlo a mano con 'sudo pacman -Rns jdk17-openjdk maven' si no los necesitas para nada más."
+    echo "Nota: jdk17-openjdk y maven NO se tocan — AutoFirma necesita el JDK 17"
+    echo "también en tiempo de ejecución (no solo para compilar), así que"
+    echo "desinstalarlo rompería la aplicación ya instalada."
 else
-    echo "Sin flag --clean: se conservan $BUILD_DIR y el caché de Maven"
+    echo "Elegiste conservar $BUILD_DIR y el caché de Maven"
     echo "para agilizar una futura actualización (git fetch + recompilar)."
-    echo "Ejecuta el script con --clean si quieres eliminarlos al finalizar."
 fi
 
 # ---------------------------------------------------------------------------
