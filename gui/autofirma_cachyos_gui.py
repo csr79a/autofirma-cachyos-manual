@@ -74,6 +74,21 @@ def pkcs12_fingerprint(path, password):
         return None
     return q.stdout.strip().replace("sha256 Fingerprint=", "").replace("SHA256 Fingerprint=", "")
 
+def pkcs12_fingerprint(path, password):
+    p = subprocess.run(
+        ["openssl", "pkcs12", "-in", str(path), "-clcerts", "-nokeys", "-passin", "stdin"],
+        input=password, text=True, capture_output=True
+    )
+    if p.returncode:
+        return None
+    q = subprocess.run(
+        ["openssl", "x509", "-noout", "-fingerprint", "-sha256"],
+        input=p.stdout, text=True, capture_output=True
+    )
+    if q.returncode:
+        return None
+    return q.stdout.strip().replace("sha256 Fingerprint=", "").replace("SHA256 Fingerprint=", "")
+
 def firefox_profiles():
     bases = []
     xdg = os.environ.get("XDG_CONFIG_HOME", str(Path.home() / ".config"))
