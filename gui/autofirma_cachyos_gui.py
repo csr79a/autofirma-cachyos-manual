@@ -59,6 +59,21 @@ def nss_fingerprint(db, nickname):
         return None
     return q.stdout.strip().replace("sha256 Fingerprint=", "").replace("SHA256 Fingerprint=", "")
 
+def pkcs12_fingerprint(path, password):
+    p = subprocess.run(
+        ["openssl", "pkcs12", "-in", str(path), "-clcerts", "-nokeys", "-passin", "stdin"],
+        input=password, text=True, capture_output=True
+    )
+    if p.returncode:
+        return None
+    q = subprocess.run(
+        ["openssl", "x509", "-noout", "-fingerprint", "-sha256"],
+        input=p.stdout, text=True, capture_output=True
+    )
+    if q.returncode:
+        return None
+    return q.stdout.strip().replace("sha256 Fingerprint=", "").replace("SHA256 Fingerprint=", "")
+
 def firefox_profiles():
     bases = []
     xdg = os.environ.get("XDG_CONFIG_HOME", str(Path.home() / ".config"))
@@ -323,29 +338,43 @@ class App(QWidget):
         if not ok:
             return
         cert = Path(path)
+        self.write(f"Comprobando certificado personal: {cert.name}")
+        fingerprint = pkcs12_fingerprint(cert, password)
+        if not fingerprint:
+            self.write("ERROR: no se pudo leer el certificado del PKCS#12. Comprueba la contraseña.")
+            return
+        self.write("Huella SHA-256: " + fingerprint)
+        rc, listing, _ = nss_certificates(NSS_DIR)
+        if rc != 0:
+            self.write("ERROR: el almacén NSS no se puede abrir.")
+            return
+        for line in listing.splitlines():
+            stripped = line.strip()
+            if not stripped or stripped.startswith("Certificate") or stripped.startswith("==="):
+                continue
+            nickname = stripped.split()[0]
+            existing = nss_fingerprint(NSS_DIR, nickname)
+            if existing == fingerprint:
+                self.write(f"El certificado ya está presente en NSS como: {nickname}")
+                return
+
         self.write(f"Importando certificado personal: {cert.name}")
-        p = subprocess.run(
-            ["pk12util", "-d", f"sql:{NSS_DIR}", "-i", str(cert), "-W", password],
-            text=True, capture_output=True
-        )
-        if p.returncode:
-            # Algunas versiones esperan -w con fichero; evitamos contraseña en argv.
-            pwfile = None
-            try:
-                import tempfile
-                fd, name = tempfile.mkstemp(prefix="autofirma-pw-", text=True)
-                os.write(fd, password.encode())
-                os.close(fd)
-                os.chmod(name, 0o600)
-                pwfile = name
-                p = subprocess.run(
-                    ["pk12util", "-d", f"sql:{NSS_DIR}", "-i", str(cert), "-w", pwfile],
-                    text=True, capture_output=True
-                )
-            finally:
-                if pwfile:
-                    try: os.unlink(pwfile)
-                    except OSError: pass
+        import tempfile
+        pwfile = None
+        try:
+            fd, name = tempfile.mkstemp(prefix="autofirma-pw-", text=True)
+            os.write(fd, password.encode())
+            os.close(fd)
+            os.chmod(name, 0o600)
+            pwfile = name
+            p = subprocess.run(
+                ["pk12util", "-d", f"sql:{NSS_DIR}", "-i", str(cert), "-w", pwfile],
+                text=True, capture_output=True
+            )
+        finally:
+            if pwfile:
+                try: os.unlink(pwfile)
+                except OSError: pass
         if p.returncode:
             self.write("ERROR al importar: " + (p.stderr or p.stdout).strip())
             return
