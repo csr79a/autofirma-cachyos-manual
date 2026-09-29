@@ -27,6 +27,7 @@ python3 gui/autofirma_cachyos_gui.py
 - **Confiar en navegadores**: usa el CA interno que genera el lanzador oficial del paquete, `~/.afirma/Autofirma/AutoFirma_ROOT.cer`. Se aplica al NSS compartido cuando existe y a perfiles Firefox que contienen `cert9.db`.
 - **Estado**: muestra dependencias, JAR instalado, NSS, CA local y registro de `afirma://`.
 - **Versiones**: consulta los tags oficiales de `ctt-gob-es/clienteafirma`; no modifica nada.
+- **Actualizar AutoFirma**: botón preparado para una futura actualización; por ahora es informativo y no modifica la instalación.
 
 El CA `AutoFirma_ROOT.cer` **no es el certificado personal FNMT**. Es el certificado interno que AutoFirma genera para su comunicación local.
 
