@@ -90,6 +90,7 @@ La GUI ofrece:
 4. **Navegadores** — confía en `AutoFirma ROOT` en el NSS compartido y en perfiles Firefox con `cert9.db`, cuando existen.
 5. **Estado** — comprueba dependencias, JAR, NSS, CA local y protocolo `afirma://`.
 6. **Versiones** — consulta los tags publicados por `ctt-gob-es/clienteafirma` sin modificar la instalación.
+7. **Actualizar AutoFirma** — botón preparado, actualmente informativo; no modifica la instalación porque el flujo de actualización aún no está definido.
 
 La GUI **no inventa un mecanismo de actualización distinto al instalador**: la instalación/reconstrucción sigue usando el flujo CachyOS/Arch documentado.
 
