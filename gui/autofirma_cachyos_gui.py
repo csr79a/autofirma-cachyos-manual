@@ -199,20 +199,20 @@ class App(QWidget):
         root.addLayout(grid)
 
         cards = [
-            ("1. AutoFirma", "Instalar / reconstruir AutoFirma", self.install),
-            ("2. NSS", "Crear o comprobar ~/.pki/nssdb", self.nss_check),
-            ("3. Certificado", "Importar certificado .p12 / .pfx", self.import_cert),
-            ("4. Estado", "Comprobar instalación e integración", self.status),
-            ("5. Versiones", "Consultar versiones oficiales disponibles", self.versions),
-            ("6. Actualizar", "Preparado para futura actualización", self.update_note),
+            ("AutoFirma", "Instala o reconstruye el cliente", "Instalar / reconstruir", self.install),
+            ("NSS", "Crea o revisa ~/.pki/nssdb", "Comprobar NSS", self.nss_check),
+            ("Certificado", "Añade tu .p12 / .pfx al almacén", "Importar certificado", self.import_cert),
+            ("Estado", "Revisa instalación e integración", "Comprobar estado", self.status),
+            ("Versiones", "Consulta las versiones oficiales", "Versiones oficiales", self.versions),
+            ("Actualizar", "Preparado para futura actualización", "Actualizar AutoFirma", self.update_note),
         ]
-        for i, (head, text, fn) in enumerate(cards):
+        for i, (head, text, button, fn) in enumerate(cards):
             box = QGroupBox(head)
             lay = QVBoxLayout(box)
             lab = QLabel(text)
             lab.setWordWrap(True)
             lay.addWidget(lab)
-            b = QPushButton("Abrir")
+            b = QPushButton(button)
             b.clicked.connect(fn)
             lay.addWidget(b)
             grid.addWidget(box, i // 2, i % 2)
@@ -378,7 +378,7 @@ class App(QWidget):
         self.write("\n=== Actualizar AutoFirma ===")
         self.write("La actualización automática todavía no modifica la instalación.")
         self.write("El instalador actual está fijado a clienteafirma v1.9.2.")
-        self.write("Primero se consultan las versiones con la tarjeta 'Versiones'.")
+        self.write("Primero se consultan las versiones con la botón «Versiones oficiales».")
         self.write("Cuando se defina el nuevo flujo de actualización, esta acción podrá reutilizar el mismo instalador.")
 
     def versions(self):
