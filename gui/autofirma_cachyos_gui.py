@@ -237,6 +237,7 @@ class App(QWidget):
             ("4. Navegadores", "Confiar en AutoFirma ROOT", self.trust_browsers),
             ("5. Estado", "Comprobar instalación e integración", self.status),
             ("6. Versiones", "Consultar versiones oficiales disponibles", self.versions),
+            ("7. Actualizar", "Preparado para futura actualización", self.update_note),
         ]
         for i, (head, text, fn) in enumerate(cards):
             box = QGroupBox(head)
@@ -440,6 +441,13 @@ class App(QWidget):
         self.write(f"CA local: {'EXISTE' if AUTOFIRMA_ROOT.is_file() else 'NO EXISTE (arranca AutoFirma primero)'}")
         p = run_capture(["xdg-mime", "query", "default", "x-scheme-handler/afirma"])
         self.write("afirma://: " + (p.stdout.strip() or "no registrado"))
+
+    def update_note(self):
+        self.write("\n=== Actualizar AutoFirma ===")
+        self.write("La actualización automática todavía no modifica la instalación.")
+        self.write("El instalador actual está fijado a clienteafirma v1.9.2.")
+        self.write("Primero se consultan las versiones con la tarjeta 'Versiones'.")
+        self.write("Cuando se defina el nuevo flujo de actualización, esta acción podrá reutilizar el mismo instalador.")
 
     def versions(self):
         self.run_pty("Consultar versiones oficiales", [
