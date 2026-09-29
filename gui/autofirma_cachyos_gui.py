@@ -101,6 +101,25 @@ def firefox_profiles():
     return list(dict.fromkeys(result))
 
 
+def trust_root_in_db(db, cert_path):
+    fp = sha256_cert(cert_path)
+    if not fp:
+        return False, "No se pudo leer el certificado raíz."
+    nick = "AutoFirma ROOT"
+    existing = nss_fingerprint(db, nick)
+    if existing and existing == fp:
+        return True, f"{db}: AutoFirma ROOT ya está instalado."
+    if existing:
+        p = run_capture(["certutil", "-M", "-d", f"sql:{db}", "-n", nick, "-t", "C,,"])
+        if p.returncode:
+            return False, f"{db}: no se pudo actualizar la confianza: {p.stderr.strip()}"
+        return True, f"{db}: confianza actualizada."
+    p = run_capture(["certutil", "-A", "-d", f"sql:{db}", "-n", nick,
+                     "-t", "C,,", "-i", str(cert_path)])
+    if p.returncode:
+        return False, f"{db}: no se pudo importar AutoFirma ROOT: {p.stderr.strip()}"
+    return True, f"{db}: AutoFirma ROOT importado con confianza C,,."
+
 class PtyRunner:
     def __init__(self, command, on_output, on_done):
         self.command = command
@@ -202,6 +221,7 @@ class App(QWidget):
             ("AutoFirma", "Instala o reconstruye el cliente", "Instalar / reconstruir", self.install),
             ("NSS", "Crea o revisa ~/.pki/nssdb", "Comprobar NSS", self.nss_check),
             ("Certificado", "Añade tu .p12 / .pfx al almacén", "Importar certificado", self.import_cert),
+            ("Navegadores", "Firefox y navegadores basados en Chromium", "Confiar cert. en navegadores", self.trust_browsers),
             ("Estado", "Revisa instalación e integración", "Comprobar estado", self.status),
             ("Versiones", "Consulta las versiones oficiales", "Versiones oficiales", self.versions),
             ("Actualizar", "Preparado para futura actualización", "Actualizar AutoFirma", self.update_note),
@@ -362,6 +382,27 @@ class App(QWidget):
             QLineEdit.EchoMode.Password,
         )
         return password, ok
+
+    def trust_browsers(self):
+        if not have("certutil"):
+            QMessageBox.critical(self, "Falta NSS", "Instala el paquete nss: sudo pacman -S nss")
+            return
+        if not AUTOFIRMA_ROOT.is_file():
+            QMessageBox.warning(self, "AutoFirma ROOT no encontrado",
+                                f"No existe todavía:\n{AUTOFIRMA_ROOT}\n\nEjecuta AutoFirma una vez para que genere su CA local.")
+            return
+        targets = []
+        if NSS_DIR.is_dir() and (NSS_DIR / "cert9.db").exists():
+            targets.append(NSS_DIR)
+        targets.extend(firefox_profiles())
+        targets = list(dict.fromkeys(targets))
+        if not targets:
+            self.write("No se encontraron almacenes NSS de navegador.")
+            return
+        for db in targets:
+            ok, msg = trust_root_in_db(db, AUTOFIRMA_ROOT)
+            self.write(("OK: " if ok else "ERROR: ") + msg)
+        self.write("Cierra completamente Firefox/Chromium/Chrome/Brave antes de volver a probar.")
 
     def status(self):
         self.write("\n=== Estado de AutoFirma ===")
