@@ -21,6 +21,7 @@ from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import (
     QApplication, QFileDialog, QGridLayout, QGroupBox, QHBoxLayout,
     QLabel, QLineEdit, QMessageBox, QPushButton, QPlainTextEdit,
+    QInputDialog,
     QProgressBar, QVBoxLayout, QWidget
 )
 
@@ -55,21 +56,6 @@ def nss_fingerprint(db, nickname):
         return None
     q = subprocess.run(["openssl", "x509", "-noout", "-fingerprint", "-sha256"],
                        input=p.stdout, text=True, capture_output=True)
-    if q.returncode:
-        return None
-    return q.stdout.strip().replace("sha256 Fingerprint=", "").replace("SHA256 Fingerprint=", "")
-
-def pkcs12_fingerprint(path, password):
-    p = subprocess.run(
-        ["openssl", "pkcs12", "-in", str(path), "-clcerts", "-nokeys", "-passin", "stdin"],
-        input=password, text=True, capture_output=True
-    )
-    if p.returncode:
-        return None
-    q = subprocess.run(
-        ["openssl", "x509", "-noout", "-fingerprint", "-sha256"],
-        input=p.stdout, text=True, capture_output=True
-    )
     if q.returncode:
         return None
     return q.stdout.strip().replace("sha256 Fingerprint=", "").replace("SHA256 Fingerprint=", "")
@@ -400,15 +386,13 @@ class App(QWidget):
             self.write(out.strip())
 
     def password_dialog(self, title, label):
-        box = QMessageBox(self)
-        box.setWindowTitle(title)
-        box.setText(label)
-        edit = QLineEdit(box)
-        edit.setEchoMode(QLineEdit.EchoMode.Password)
-        box.layout().addWidget(edit, 1, 1)
-        box.setStandardButtons(QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel)
-        result = box.exec()
-        return edit.text(), result == QMessageBox.StandardButton.Ok
+        password, ok = QInputDialog.getText(
+            self,
+            title,
+            label,
+            QLineEdit.EchoMode.Password,
+        )
+        return password, ok
 
     def trust_browsers(self):
         if not have("certutil"):
