@@ -378,7 +378,7 @@ class App(QWidget):
         self.write("\n=== Actualizar AutoFirma ===")
         self.write("La actualización automática todavía no modifica la instalación.")
         self.write("El instalador actual está fijado a clienteafirma v1.9.2.")
-        self.write("Primero se consultan las versiones con la botón «Versiones oficiales».")
+        self.write("Primero se consultan las versiones con el botón «Versiones oficiales».")
         self.write("Cuando se defina el nuevo flujo de actualización, esta acción podrá reutilizar el mismo instalador.")
 
     def versions(self):
