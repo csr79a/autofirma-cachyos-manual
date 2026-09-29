@@ -107,17 +107,26 @@ def trust_root_in_db(db, cert_path):
     nick = "AutoFirma ROOT"
     existing = nss_fingerprint(db, nick)
     if existing and existing == fp:
-        return True, f"{db}: AutoFirma ROOT ya está instalado."
-    if existing:
         p = run_capture(["certutil", "-M", "-d", f"sql:{db}", "-n", nick, "-t", "C,,"])
         if p.returncode:
-            return False, f"{db}: no se pudo actualizar la confianza: {p.stderr.strip()}"
-        return True, f"{db}: confianza actualizada."
+            return False, f"{db}: no se pudo verificar/actualizar la confianza: {p.stderr.strip()}"
+        verified = nss_fingerprint(db, nick)
+        if verified != fp:
+            return False, f"{db}: la huella del certificado de confianza no coincide."
+        return True, f"{db}: AutoFirma ROOT ya está instalado y confiado."
+    if existing:
+        return False, (
+            f"{db}: ya existe un certificado con el nombre «{nick}», "
+            "pero su huella SHA-256 es diferente. No se modifica por seguridad."
+        )
     p = run_capture(["certutil", "-A", "-d", f"sql:{db}", "-n", nick,
                      "-t", "C,,", "-i", str(cert_path)])
     if p.returncode:
         return False, f"{db}: no se pudo importar AutoFirma ROOT: {p.stderr.strip()}"
-    return True, f"{db}: AutoFirma ROOT importado con confianza C,,."
+    verified = nss_fingerprint(db, nick)
+    if verified != fp:
+        return False, f"{db}: importación realizada pero la huella verificada no coincide."
+    return True, f"{db}: AutoFirma ROOT importado y verificado con confianza C,,."
 
 class PtyRunner:
     def __init__(self, command, on_output, on_done):
@@ -361,22 +370,10 @@ class App(QWidget):
                 return
 
         self.write(f"Importando certificado personal: {cert.name}")
-        import tempfile
-        pwfile = None
-        try:
-            fd, name = tempfile.mkstemp(prefix="autofirma-pw-", text=True)
-            os.write(fd, password.encode())
-            os.close(fd)
-            os.chmod(name, 0o600)
-            pwfile = name
-            p = subprocess.run(
-                ["pk12util", "-d", f"sql:{NSS_DIR}", "-i", str(cert), "-w", pwfile],
-                text=True, capture_output=True
-            )
-        finally:
-            if pwfile:
-                try: os.unlink(pwfile)
-                except OSError: pass
+        p = subprocess.run(
+            ["pk12util", "-d", f"sql:{NSS_DIR}", "-i", str(cert), "-w", "/dev/stdin"],
+            input=password + "\n", text=True, capture_output=True
+        )
         if p.returncode:
             self.write("ERROR al importar: " + (p.stderr or p.stdout).strip())
             return
