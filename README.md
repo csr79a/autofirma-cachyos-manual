@@ -64,3 +64,32 @@ git ls-remote --tags https://github.com/ctt-gob-es/clienteafirma.git | grep -v '
 O activa notificaciones en GitHub: entra a
 [`ctt-gob-es/clienteafirma`](https://github.com/ctt-gob-es/clienteafirma) →
 botón **Watch** → **Custom** → marca **Releases**.
+
+
+## GUI de AutoFirma para CachyOS
+
+El repositorio incluye una GUI PyQt6 en `gui/autofirma_cachyos_gui.py`, con el mismo enfoque de PTY, salida interactiva, tarjetas y cancelación usado en las otras GUI del proyecto.
+
+Instala la dependencia gráfica:
+
+```bash
+sudo pacman -S --needed python python-pyqt6
+```
+
+Ejecuta **sin sudo**:
+
+```bash
+python3 gui/autofirma_cachyos_gui.py
+```
+
+La GUI ofrece:
+
+1. **Instalar / reconstruir AutoFirma** — ejecuta el instalador existente; no duplica la lógica de compilación.
+2. **NSS** — crea `~/.pki/nssdb` con contraseña vacía si no existe. Si ya existe, no lo recrea, no lo borra y no lo modifica.
+3. **Certificado** — selector gráfico para `.p12/.pfx`, comprobación de contraseña y huella SHA-256, detección de duplicado e importación segura con `pk12util`.
+4. **Navegadores** — confía en `AutoFirma ROOT` en el NSS compartido y en perfiles Firefox con `cert9.db`, cuando existen.
+5. **Estado** — comprueba dependencias, JAR, NSS, CA local y protocolo `afirma://`.
+6. **Versiones** — consulta los tags publicados por `ctt-gob-es/clienteafirma` sin modificar la instalación.
+
+La GUI **no inventa un mecanismo de actualización distinto al instalador**: la instalación/reconstrucción sigue usando el flujo CachyOS/Arch documentado.
+
