@@ -1,0 +1,77 @@
+From 05d433f6d5439263c5cf58bbd1391e06d5fc6bea Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Emilio=20Cobos=20=C3=81lvarez?= <emilio@crisal.io>
+Date: Sun, 8 Feb 2026 02:13:12 +0100
+Subject: [PATCH] Fix more Firefox profile path references.
+
+See #479
+---
+ .../ui/restoreconfig/RestoreConfigFirefox.java | 12 ++++++++----
+ .../configurator/ConfiguratorFirefoxLinux.java | 18 +++++++++---------
+ 2 files changed, 17 insertions(+), 13 deletions(-)
+
+diff --git a/afirma-simple/src/main/java/es/gob/afirma/standalone/ui/restoreconfig/RestoreConfigFirefox.java b/afirma-simple/src/main/java/es/gob/afirma/standalone/ui/restoreconfig/RestoreConfigFirefox.java
+index 3dd9bbfb3..b8f6faff4 100644
+--- a/afirma-simple/src/main/java/es/gob/afirma/standalone/ui/restoreconfig/RestoreConfigFirefox.java
++++ b/afirma-simple/src/main/java/es/gob/afirma/standalone/ui/restoreconfig/RestoreConfigFirefox.java
+@@ -58,8 +58,11 @@ final class RestoreConfigFirefox {
+ 	static final String DIR_CERTUTIL = "certutil"; //$NON-NLS-1$
+ 	private static final String LINUX_UNINSTALLSCRIPT_NAME = "uninstallRestore-"; //$NON-NLS-1$
+ 	private static final String LINUX_SCRIPT_NAME = "installRestore-"; //$NON-NLS-1$
+-	private static final String LINUX_MOZILLA_PATH = "/.mozilla/firefox/profiles.ini";//$NON-NLS-1$
+-	private static final String UBUNTU_22_MOZILLA_PATH = "/snap/firefox/common/.mozilla/firefox/profiles.ini"; //$NON-NLS-1$
++	private static final String[] LINUX_MOZILLA_PATHS = new String[] {
++		"/.mozilla/firefox/profiles.ini",
++		"/.config/mozilla/firefox/profiles.ini",
++		"/snap/firefox/common/.mozilla/firefox/profiles.ini",
++	}; //$NON-NLS-1$
+ 	private static final String NSS_LINUX_CHROME_PATH = "/.pki/nssdb";//$NON-NLS-1$
+ 	//TODO: En Chromium ahora solo se instalara el certificado de confianza para el perfil activo
+ 	private static final String NSS_LINUX_CHROMIUM_PATH = "/snap/chromium/current/.pki/nssdb";//$NON-NLS-1$
+@@ -830,8 +833,9 @@ private static List<File> getMozillaUsersProfilesPath(final List<String> users){
+ 		final List<String> pathProfiles = new ArrayList<>();
+ 		final List<File> path = new ArrayList<>();
+ 		if (Platform.OS.LINUX.equals(Platform.getOS())) {
+-			pathProfiles.add(UBUNTU_22_MOZILLA_PATH);
+-			pathProfiles.add(LINUX_MOZILLA_PATH);
++		    for (final String p : LINUX_MOZILLA_PATHS) {
++				pathProfiles.add(p);
++			}
+ 		}
+ 		else if (Platform.OS.WINDOWS.equals(Platform.getOS())) {
+ 			pathProfiles.add(WINDOWS_MOZILLA_PATH);
+diff --git a/afirma-ui-simple-configurator/src/main/java/es/gob/afirma/standalone/configurator/ConfiguratorFirefoxLinux.java b/afirma-ui-simple-configurator/src/main/java/es/gob/afirma/standalone/configurator/ConfiguratorFirefoxLinux.java
+index d2b3d01a9..99693d812 100644
+--- a/afirma-ui-simple-configurator/src/main/java/es/gob/afirma/standalone/configurator/ConfiguratorFirefoxLinux.java
++++ b/afirma-ui-simple-configurator/src/main/java/es/gob/afirma/standalone/configurator/ConfiguratorFirefoxLinux.java
+@@ -37,7 +37,11 @@ final class ConfiguratorFirefoxLinux {
+ 	private static final String CERTUTIL_EXE = "certutil"; //$NON-NLS-1$
+ 	private static final String CERTUTIL_RELATIVE_PATH = "certutil" + File.separator + CERTUTIL_EXE; //$NON-NLS-1$
+ 
+-	private static final String PROFILES_INI_RELATIVE_PATH = ".mozilla/firefox/profiles.ini";//$NON-NLS-1$
++	private static final String[] PROFILES_INI_RELATIVE_PATH = new String[] {
++		".config/mozilla/firefox/profiles.ini",
++		".mozilla/firefox/profiles.ini",
++		"snap/firefox/common/.mozilla/firefox/profiles.ini",
++	};
+ 	private static final String PROFILES_INI_RELATIVE_PATH_UBUNTU_22 = "snap/firefox/common/.mozilla/firefox/profiles.ini"; //$NON-NLS-1$
+ 
+ 	private static final String NSS_CHROME_PATH = "/.pki/nssdb"; //$NON-NLS-1$
+@@ -346,14 +350,10 @@ private static List<File> getProfiles(final String[] userDirs) {
+ 	private static List<File> getMozillaProfilesIniPaths(final String[] userDirs){
+ 
+ 		final List<File> profilesIniFiles = new ArrayList<>();
+-		for (final String userDir : userDirs){
+-
+-			File mozillaPath = new File(userDir, PROFILES_INI_RELATIVE_PATH_UBUNTU_22);
+-			if (mozillaPath.isFile()) {
+-				profilesIniFiles.add(mozillaPath);
+-			} else {
+-				mozillaPath = new File(userDir, PROFILES_INI_RELATIVE_PATH);
+-				if (mozillaPath.isFile()){
++		for (final String userDir : userDirs) {
++			for (final String p : PROFILES_INI_RELATIVE_PATH) {
++				File mozillaPath = new File(userDir, p);
++				if (mozillaPath.isFile()) {
+ 					profilesIniFiles.add(mozillaPath);
+ 				}
+ 			}
