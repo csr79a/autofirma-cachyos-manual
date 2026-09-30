@@ -89,7 +89,8 @@ def pkcs12_info(path, password):
     base = ["openssl", "pkcs12", "-in", str(path), "-clcerts", "-nokeys", "-passin", "stdin"]
     attempts = [base]
     if have("openssl"):
-        attempts.append(base[:3] + ["-legacy"] + base[3:])
+        attempts.append(["openssl", "pkcs12", "-legacy", "-in", str(path),
+                         "-clcerts", "-nokeys", "-passin", "stdin"])
     for command in attempts:
         p = subprocess.run(command, input=password, text=True, capture_output=True)
         if p.returncode:
